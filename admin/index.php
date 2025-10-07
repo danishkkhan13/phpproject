@@ -48,32 +48,45 @@ unset($_SESSION['success'], $_SESSION['error']);
         <?php if (empty($products)): ?>
             <p>No products found. <a href="add_product.php">Add your first product</a></p>
         <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Description</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($products as $product): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($product['id']) ?></td>
-                            <td><?= htmlspecialchars($product['name']) ?></td>
-                            <td>$<?= number_format($product['price'], 2) ?></td>
-                            <td><?= htmlspecialchars($product['description'] ?: 'No description') ?></td>
-                            <td class="action-links">
-                                <a href="edit_product.php?id=<?= $product['id'] ?>" class="edit-link">Edit</a>
-                                <a href="delete_product.php?id=<?= $product['id'] ?>" class="delete-link" 
-                                   onclick="return confirm('Are you sure you want to delete \"<?= htmlspecialchars($product['name']) ?>\"?')">Delete</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+           <!-- In the products table, add image column -->
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($products as $product): ?>
+            <tr>
+                <td><?= htmlspecialchars($product['id']) ?></td>
+                <td>
+                    <?php if ($product['image']): ?>
+                        <img src="../uploads/<?= htmlspecialchars($product['image']) ?>" 
+                             alt="<?= htmlspecialchars($product['name']) ?>" 
+                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                    <?php else: ?>
+                        <div style="width: 50px; height: 50px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
+                            <small>No image</small>
+                        </div>
+                    <?php endif; ?>
+                </td>
+                <td><?= htmlspecialchars($product['name']) ?></td>
+                <td>$<?= number_format($product['price'], 2) ?></td>
+                <td><?= htmlspecialchars($product['description'] ?: 'No description') ?></td>
+                <td class="action-links">
+                    <a href="edit_product.php?id=<?= $product['id'] ?>" class="edit-link">Edit</a>
+                    <a href="delete_product.php?id=<?= $product['id'] ?>" class="delete-link" 
+                       onclick="return confirm('Are you sure you want to delete \"<?= htmlspecialchars($product['name']) ?>\"?')">Delete</a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
         <?php endif; ?>
     </div>
 </body>

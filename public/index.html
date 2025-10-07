@@ -33,49 +33,39 @@
         <p>&copy; 2025 Your Company Name. All rights reserved.</p>
     </footer>
 
-    <script>
-        // Fetch products from the admin's get_products.php endpoint
-        fetch('../admin/get_products.php')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(products => {
-                const productList = document.getElementById('productList');
-                
-                if (products.length === 0) {
-                    productList.innerHTML = '<p>No products available at the moment.</p>';
-                    return;
-                }
-                
-                // Show only 6 featured products on homepage
-                const featuredProducts = products.slice(0, 6);
-                
-                productList.innerHTML = featuredProducts.map(product => `
-                    <div class="product-card">
-                        <h3>${escapeHtml(product.name)}</h3>
-                        <div class="price">$${parseFloat(product.price).toFixed(2)}</div>
-                        <div class="description">${escapeHtml(product.description || 'No description available.')}</div>
+<!-- Update the product display in the script -->
+<script>
+    fetch('../admin/get_products.php')
+        .then(response => response.json())
+        .then(products => {
+            const productList = document.getElementById('productList');
+            
+            if (products.length === 0) {
+                productList.innerHTML = '<p>No products available at the moment.</p>';
+                return;
+            }
+            
+            const featuredProducts = products.slice(0, 6);
+            
+            productList.innerHTML = featuredProducts.map(product => `
+                <div class="product-card">
+                    <div class="product-image">
+                        ${product.image ? 
+                            `<img src="../uploads/${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">` : 
+                            `<div class="no-image">No Image</div>`
+                        }
                     </div>
-                `).join('');
-            })
-            .catch(error => {
-                console.error('Error fetching products:', error);
-                document.getElementById('productList').innerHTML = 
-                    '<p class="error">Unable to load products. Please try again later.</p>';
-            });
-
-        // Helper function to escape HTML
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-    </script>
+                    <h3>${escapeHtml(product.name)}</h3>
+                    <div class="price">$${parseFloat(product.price).toFixed(2)}</div>
+                    <div class="description">${escapeHtml(product.description || 'No description available.')}</div>
+                </div>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error fetching products:', error);
+            document.getElementById('productList').innerHTML = 
+                '<p class="error">Unable to load products. Please try again later.</p>';
+        });
+</script>
 </body>
 </html>

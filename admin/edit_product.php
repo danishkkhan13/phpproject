@@ -2,28 +2,22 @@
 session_start();
 require_once '../includes/functions.php';
 
-// Check if admin is logged in
 if (!isset($_SESSION['admin_logged_in']) || !$_SESSION['admin_logged_in']) {
     header('Location: login.php');
     exit;
 }
 
-// Get product ID from URL
 $id = $_GET['id'] ?? null;
+$product = null;
 
-// Validate product ID
 if (!$id || !is_numeric($id)) {
-    $_SESSION['error'] = "Invalid product ID!";
     header('Location: index.php');
     exit;
 }
 
-// Fetch product data
 $product = getProductById($id);
 
-// Check if product exists
 if (!$product) {
-    $_SESSION['error'] = "Product not found!";
     header('Location: index.php');
     exit;
 }
@@ -31,38 +25,52 @@ if (!$product) {
 $success = '';
 $error = '';
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $price = trim($_POST['price'] ?? '');
     $description = trim($_POST['description'] ?? '');
+    $currentImage = $product['image'];
+    $newImage = $currentImage;
 
-    // Validate form data
-    if (empty($name)) {
-        $error = "Product name is required!";
-    } elseif (empty($price) || !is_numeric($price) || $price < 0) {
-        $error = "Valid price is required!";
-    } else {
-        // Update product
-        if (updateProduct($id, $name, $price, $description)) {
+    // Handle new image upload
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $uploadResult = uploadImage($_FILES['image']);
+        if (!$uploadResult['success']) {
+            $error = $uploadResult['message'];
+        } else {
+            // Delete old image if exists
+            if ($currentImage) {
+                $oldImagePath = "../uploads/" . $currentImage;
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+            }
+            $newImage = $uploadResult['fileName'];
+        }
+    }
+
+    // Handle image removal
+    if (isset($_POST['remove_image']) && $_POST['remove_image'] === '1') {
+        if ($currentImage) {
+            $imagePath = "../uploads/" . $currentImage;
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
+        }
+        $newImage = null;
+    }
+
+    if (empty($error) && $name && $price && is_numeric($price)) {
+        if (updateProduct($id, $name, $price, $description, $newImage)) {
             $_SESSION['success'] = "Product updated successfully!";
             header('Location: index.php');
             exit;
         } else {
             $error = "Failed to update product. Please try again.";
         }
+    } elseif (empty($error)) {
+        $error = "Please fill in all required fields correctly!";
     }
-}
-
-// Check for session messages
-if (isset($_SESSION['success'])) {
-    $success = $_SESSION['success'];
-    unset($_SESSION['success']);
-}
-
-if (isset($_SESSION['error'])) {
-    $error = $_SESSION['error'];
-    unset($_SESSION['error']);
 }
 ?>
 
@@ -71,54 +79,56 @@ if (isset($_SESSION['error'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Product - Admin Dashboard</title>
+    <title>Edit Product</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="dashboard-header">
             <h2>Edit Product</h2>
-            <div>
-                <a href="index.php" class="btn">Back to Dashboard</a>
-            </div>
+            <a href="index.php" class="btn">Back to Dashboard</a>
         </div>
 
-        <!-- Success Message -->
-        <?php if (!empty($success)): ?>
-            <div class="success">
-                <?php echo htmlspecialchars($success); ?>
-            </div>
+        <?php if ($error): ?>
+            <div class="error"><?php echo $error; ?></div>
         <?php endif; ?>
 
-        <!-- Error Message -->
-        <?php if (!empty($error)): ?>
-            <div class="error">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- Edit Product Form -->
         <div class="form-container">
-            <form method="POST" action="edit_product.php?id=<?php echo $id; ?>">
+            <form method="POST" action="edit_product.php?id=<?= $id ?>" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="name">Product Name:</label>
+                    <label for="name">Product Name *</label>
                     <input type="text" id="name" name="name" 
-                           value="<?php echo htmlspecialchars($product['name']); ?>" 
-                           required>
+                           value="<?= htmlspecialchars($product['name']) ?>" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="price">Price ($):</label>
+                    <label for="price">Price ($) *</label>
                     <input type="number" id="price" name="price" 
-                           value="<?php echo htmlspecialchars($product['price']); ?>" 
+                           value="<?= htmlspecialchars($product['price']) ?>" 
                            step="0.01" min="0" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="description">Description:</label>
-                    <textarea id="description" name="description" 
-                              rows="4" 
-                              placeholder="Enter product description..."><?php echo htmlspecialchars($product['description']); ?></textarea>
+                    <label for="image">Product Image</label>
+                    
+                    <?php if ($product['image']): ?>
+                        <div class="current-image">
+                            <p>Current Image:</p>
+                            <img src="../uploads/<?= htmlspecialchars($product['image']) ?>" 
+                                 alt="<?= htmlspecialchars($product['name']) ?>" style="max-width: 200px;">
+                            <label class="remove-image">
+                                <input type="checkbox" name="remove_image" value="1"> Remove image
+                            </label>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <input type="file" id="image" name="image" accept="image/*">
+                    <small>Supported formats: JPG, JPEG, PNG, GIF, WEBP (Max: 5MB)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4"><?= htmlspecialchars($product['description']) ?></textarea>
                 </div>
 
                 <div class="form-actions">
@@ -128,33 +138,30 @@ if (isset($_SESSION['error'])) {
             </form>
         </div>
 
-        <!-- Product Preview -->
+        <!-- New Image Preview -->
         <div class="preview-section">
-            <h3>Product Preview</h3>
-            <div class="product-card preview">
-                <h4 id="preview-name"><?php echo htmlspecialchars($product['name']); ?></h4>
-                <div class="price" id="preview-price">$<?php echo number_format($product['price'], 2); ?></div>
-                <div class="description" id="preview-description">
-                    <?php echo htmlspecialchars($product['description'] ?: 'No description available.'); ?>
-                </div>
+            <h3>New Image Preview</h3>
+            <div id="imagePreview" class="image-preview">
+                <p>No new image selected</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Real-time preview update
-        document.getElementById('name').addEventListener('input', function() {
-            document.getElementById('preview-name').textContent = this.value || 'Product Name';
-        });
-
-        document.getElementById('price').addEventListener('input', function() {
-            const price = parseFloat(this.value) || 0;
-            document.getElementById('preview-price').textContent = '$' + price.toFixed(2);
-        });
-
-        document.getElementById('description').addEventListener('input', function() {
-            document.getElementById('preview-description').textContent = 
-                this.value || 'No description available.';
+        // Image preview functionality
+        document.getElementById('image').addEventListener('change', function(e) {
+            const preview = document.getElementById('imagePreview');
+            const file = e.target.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 300px;">`;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '<p>No new image selected</p>';
+            }
         });
     </script>
 </body>
