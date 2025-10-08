@@ -6,6 +6,7 @@
     <title>ShopEase - Premium Products Delivered</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/cart.js" defer></script>
     <style>
         /* Modern Home Page Styles */
         :root {
@@ -660,31 +661,12 @@
             }
         }
 
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: var(--gradient);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 10000;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            max-width: 300px;
-        }
-
+      
         .notification.show {
             transform: translateX(0);
         }
 
-        .notification-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+      
     </style>
 </head>
 <body>
@@ -706,7 +688,7 @@
                     <span class="cart-count" id="cartCount">0</span>
                 </a>
                 <a href="../admin/login.php" class="btn-login">
-                    <i class="fas fa-user"></i> Admin Login
+                    <i class="fas fa-user"></i> Admin 
                 </a>
             </div>
         </div>
@@ -821,7 +803,7 @@
             <div class="footer-column">
                 <h3>Customer Service</h3>
                 <ul class="footer-links">
-                    <li><a href="#">FAQ</a></li>
+                    <li><a href="faq.html">FAQ</a></li>
                     <li><a href="#">Shipping Policy</a></li>
                     <li><a href="#">Returns & Refunds</a></li>
                     <li><a href="#">Track Order</a></li>
@@ -842,12 +824,6 @@
     </footer>
 
     <!-- Notification -->
-    <div class="notification" id="notification">
-        <div class="notification-content">
-            <i class="fas fa-check-circle"></i>
-            <span id="notificationMessage">Product added to cart!</span>
-        </div>
-    </div>
 
     <script>
         // Cart functionality
@@ -859,6 +835,7 @@
             cartCount.textContent = totalItems;
         }
 
+    
         function addToCart(product) {
             const existingItem = cart.find(item => item.id === product.id);
             
@@ -877,19 +854,47 @@
             localStorage.setItem('cart', JSON.stringify(cart));
             updateCartCount();
             
-            // Show notification
+            // Show success message
             showNotification('Product added to cart!');
         }
 
         function showNotification(message) {
-            const notification = document.getElementById('notification');
-            const notificationMessage = document.getElementById('notificationMessage');
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: var(--gradient);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+            `;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-check-circle"></i>
+                    <span>${message}</span>
+                </div>
+            `;
             
-            notificationMessage.textContent = message;
-            notification.classList.add('show');
+            document.body.appendChild(notification);
             
+            // Animate in
             setTimeout(() => {
-                notification.classList.remove('show');
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Animate out and remove
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
             }, 3000);
         }
 

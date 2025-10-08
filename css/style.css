@@ -50,7 +50,6 @@ nav a:hover {
     margin: 2rem auto;
     padding: 2rem;
     border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
 }
 
